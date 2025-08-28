@@ -1,0 +1,31 @@
+﻿@page
+@model WebAppRazorClient.Pages.SwListModel
+@{
+    ViewData["Title"] = "Sandwich List";
+}
+<h1>Sandwich List</h1>
+
+<table class="table mt-5">
+    <thead>
+        <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Price</th>
+            <th scope="col">Delete</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var sandwich in await Model.SwList)
+        {
+            <tr>
+                <td>@sandwich.Name</td>
+                <td>@($"{sandwich.Price:C}")</td>
+
+                <td>
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@sandwich.Id">
+                        <button class="btn btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
