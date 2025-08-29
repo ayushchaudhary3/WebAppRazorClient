@@ -20,5 +20,11 @@ namespace WebAppRazorClient.Pages
 
         }
 
+        public async Task<IActionResult> OnPostDeleteAsync(int id)
+        {
+            await _service.DeleteSandwichAsync(id);
+            return RedirectToPage();
+        }
+
     }
 }

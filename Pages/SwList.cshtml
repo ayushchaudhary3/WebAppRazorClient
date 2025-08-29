@@ -5,6 +5,8 @@
 }
 <h1>Sandwich List</h1>
 
+<a asp-page="/Create" class="btn btn-success mb-3">Create Sandwich</a>
+
 <table class="table mt-5">
     <thead>
         <tr>
@@ -24,6 +26,7 @@
                     <form method="post" asp-page-handler="Delete" asp-route-id="@sandwich.Id">
                         <button class="btn btn-danger">Delete</button>
                     </form>
+                    <a asp-page="Edit" asp-route-id="@sandwich.Id" class="btn btn-warning btn-sm">Edit</a>
                 </td>
             </tr>
         }
