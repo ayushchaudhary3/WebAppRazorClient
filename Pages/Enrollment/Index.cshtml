@@ -1,0 +1,32 @@
+@page
+@model WebAppRazorClient.Pages.Enrollment.IndexModel
+@{
+    ViewData["Title"] = "Enrollments";
+}
+<h1>Enrollments</h1>
+<a class="btn btn-primary mb-2" asp-page="Create">Create New Enrollment</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Student Name</th>
+            <th>Course Title</th>
+            <th>Credits</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var enrollment in Model.Enrollments)
+    {
+        <tr>
+            <td>@enrollment.StudentName</td>
+            <td>@enrollment.CourseTitle</td>
+            <td>@enrollment.CourseCredits</td>
+            <td>
+                <a asp-page="Edit" asp-route-id="@enrollment.EnrollmentId" class="btn btn-sm btn-warning">Edit</a>
+                <a asp-page="Details" asp-route-id="@enrollment.EnrollmentId" class="btn btn-sm btn-info">Details</a>
+                <a asp-page="Delete" asp-route-id="@enrollment.EnrollmentId" class="btn btn-sm btn-danger">Delete</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

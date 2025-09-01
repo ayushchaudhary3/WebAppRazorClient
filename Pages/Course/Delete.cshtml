@@ -1,0 +1,15 @@
+@page "{id:int}"
+@model WebAppRazorClient.Pages.Course.DeleteModel
+@{
+    ViewData["Title"] = "Delete Course";
+}
+<h1>Delete Course</h1>
+<h3>Are you sure you want to delete this course?</h3>
+<div>
+    <strong>@Model.Course.Title</strong> (Credit: @Model.Course.Credits)
+</div>
+<form method="post">
+    <input type="hidden" asp-for="Course.CourseId" />
+    <button type="submit" class="btn btn-danger mt-2">Delete</button>
+    <a asp-page="Index" class="btn btn-secondary mt-2">Cancel</a>
+</form>

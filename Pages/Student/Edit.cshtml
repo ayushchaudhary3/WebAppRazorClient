@@ -1,0 +1,16 @@
+@page "{id:int}"
+@model WebAppRazorClient.Pages.Student.EditModel
+@{
+    ViewData["Title"] = "Edit Student";
+}
+<h1>Edit Student</h1>
+<form method="post">
+    <input type="hidden" asp-for="Student.StudentId" />
+    <div class="form-group">
+        <label asp-for="Student.Name"></label>
+        <input asp-for="Student.Name" class="form-control" />
+        <span asp-validation-for="Student.Name" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">Save</button>
+    <a asp-page="Index" class="btn btn-secondary mt-2">Back to List</a>
+</form>

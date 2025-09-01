@@ -6,10 +6,18 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 //builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddScoped<SandwichService>();
+builder.Services.AddScoped<WebAppRazorClient.Service.StudentService>();
+builder.Services.AddScoped<WebAppRazorClient.Service.CourseService>();
+builder.Services.AddScoped<WebAppRazorClient.Service.EnrollmentService>();
 
 builder.Services.AddHttpClient("WebAPISandwich", httpclient =>
 {
     httpclient.BaseAddress = new Uri("https://localhost:7084/api/Sandwich"); // Corrected BaseAddress
+});
+
+builder.Services.AddHttpClient("WebAPIStudent", httpclient =>
+{
+    httpclient.BaseAddress = new Uri("https://localhost:7113/api/");
 });
 
 var app = builder.Build();

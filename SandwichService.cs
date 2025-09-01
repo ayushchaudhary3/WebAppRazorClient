@@ -27,7 +27,7 @@ namespace WebAppRazorClient
                 //return sandwiches ?? new();// Initialize a new instance of List<Repository> class
                 return sandwiches ?? new List<SandwichModel>();                          // which is empty and has default initial capacity.
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
@@ -47,7 +47,7 @@ namespace WebAppRazorClient
                 var createdSandwich = await response.Content.ReadFromJsonAsync<SandwichModel>();
                 return createdSandwich;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
@@ -61,7 +61,7 @@ namespace WebAppRazorClient
                 var response = await client.DeleteAsync($"https://localhost:7084/api/Sandwich/{id}");
                 return response.IsSuccessStatusCode;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
@@ -75,7 +75,7 @@ namespace WebAppRazorClient
                 var response = await client.PutAsJsonAsync($"https://localhost:7084/api/Sandwich/{id}", sandwich);
                 return response.IsSuccessStatusCode;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
@@ -91,7 +91,7 @@ namespace WebAppRazorClient
                 var sandwich = await response.Content.ReadFromJsonAsync<SandwichModel>();
                 return sandwich;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
