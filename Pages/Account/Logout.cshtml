@@ -1,0 +1,11 @@
+@page
+@model WebAppRazorClient.Pages.Account.LogoutModel
+@{
+    ViewData["Title"] = "Logout";
+}
+<!-- This page is only used as a target for the POST logout form. If user navigates here via GET we redirect. -->
+<form method="post" class="mt-3">
+    @* Antiforgery token is generated automatically when using Razor form helpers / tag helpers. *@
+    <p>Signing out…</p>
+    <button type="submit" class="btn btn-danger">Logout</button>
+</form>

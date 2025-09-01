@@ -1,0 +1,28 @@
+@page
+@model WebAppRazorClient.Pages.Account.ProfileModel
+@{
+    ViewData["Title"] = "Profile";
+}
+<h2>Welcome, @Model.Username</h2>
+
+<div class="mb-3">
+    <strong>Email:</strong> @Model.Username
+</div>
+
+@if (Model.Roles?.Any() == true)
+{
+    <div class="mb-3">
+        <strong>Roles:</strong>
+        <ul>
+            @foreach (var r in Model.Roles)
+            {
+                <li>@r</li>
+            }
+        </ul>
+    </div>
+}
+
+
+<form method="post" asp-page="/Account/Logout" class="d-inline">
+    <button type="submit" class="btn btn-danger">Logout</button>
+</form>

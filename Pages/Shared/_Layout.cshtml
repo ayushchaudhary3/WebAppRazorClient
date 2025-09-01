@@ -22,9 +22,6 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-page="/Index"><b>Home🏠</b></a>
                         </li>
-                        @* <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/SwList">Sandwich Menu</a>
-                        </li> *@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-page="/Privacy"><b>Privacy🔫</b></a>
                         </li>
@@ -41,6 +38,30 @@
                             <a class="nav-link text-dark" asp-area="" asp-page="/Enrollment/Index"><b>Enrollment🏫</b></a>
                         </li>
                     </ul>
+
+                    <ul class="navbar-nav">
+                        @if (User?.Identity?.IsAuthenticated ?? false)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Account/Profile">Hello, @User.Identity.Name</a>
+                            </li>
+                            <li class="nav-item">
+                                <form method="post" asp-page="/Account/Logout" class="d-inline">
+                                    <button type="submit" class="btn btn-link nav-link">Logout</button>
+                                </form>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Account/Login">Login</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Account/Register">Register</a>
+                            </li>
+                        }
+                    </ul>
+
                 </div>
             </div>
         </nav>
