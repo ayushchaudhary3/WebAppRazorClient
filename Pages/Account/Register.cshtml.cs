@@ -10,7 +10,7 @@ namespace WebAppRazorClient.Pages.Account
     {
         private readonly IAccountService _accountService;
 
-        public RegisterModel(IAccountService accountService)
+        public RegisterModel(IAccountService accountService) 
         {
             _accountService = accountService;
         }

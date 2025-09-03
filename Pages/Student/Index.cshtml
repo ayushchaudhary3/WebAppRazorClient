@@ -4,7 +4,16 @@
     ViewData["Title"] = "Students";
 }
 <h1>Students</h1>
-<a class="btn btn-primary mb-2" asp-page="Create">Add New Student</a>
+
+@if (User.Identity?.IsAuthenticated ?? false)
+{
+    <a class="btn btn-primary mb-2" asp-page="Create">Add New Student</a>
+}
+else
+{
+    <a class="btn btn-primary mb-2" asp-area="Identity" asp-page="/Account/Login">Add New Student</a>
+}
+
 <table class="table">
     <thead>
         <tr>
@@ -22,9 +31,18 @@
             <td>@student.Age</td>
             <td>@student.Address</td>
             <td>
-                <a asp-page="Edit" asp-route-id="@student.StudentId" class="btn btn-sm btn-warning">Edit</a>
+                @if (User.Identity?.IsAuthenticated ?? false)
+                {
+                    <a asp-page="Edit" asp-route-id="@student.StudentId" class="btn btn-sm btn-warning">Edit</a>
+                    <a asp-page="Delete" asp-route-id="@student.StudentId" class="btn btn-sm btn-danger">Delete</a>
+                }
+                else
+                {
+                    <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-sm btn-warning">Edit</a>
+                    <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-sm btn-danger">Delete</a>
+                }
+
                 <a asp-page="Details" asp-route-id="@student.StudentId" class="btn btn-sm btn-info">Details</a>
-                <a asp-page="Delete" asp-route-id="@student.StudentId" class="btn btn-sm btn-danger">Delete</a>
             </td>
         </tr>
     }

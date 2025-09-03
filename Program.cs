@@ -12,9 +12,9 @@ builder.Services.AddRazorPages();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/Account/Login";
-        options.LogoutPath = "/Account/Logout";
-        options.Cookie.Name = "WebAppRazorClient.Auth";
+        options.LoginPath = "/Account/Login"; // Redirect to login page if not authenticated
+        options.LogoutPath = "/Account/Logout"; // Redirect to logout page
+        options.Cookie.Name = "WebAppRazorClient.Auth"; // Name of the auth cookie
     });
 
 // Accessor for reading claims in handler
@@ -27,11 +27,11 @@ builder.Services.AddTransient<TokenAttachHandler>();
 builder.Services.AddHttpClient("ApiClient", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["Api:BaseUrl"] ?? "https://localhost:7084/");
-    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json")); // Accept JSON responses
 })
 .AddHttpMessageHandler<TokenAttachHandler>();
 
-builder.Services.AddScoped<SandwichService>();
+builder.Services.AddScoped<SandwichService>(); //Scoped - one instance per request
 builder.Services.AddScoped<WebAppRazorClient.Service.StudentService>();
 builder.Services.AddScoped<WebAppRazorClient.Service.CourseService>();
 builder.Services.AddScoped<WebAppRazorClient.Service.EnrollmentService>();

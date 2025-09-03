@@ -5,7 +5,16 @@
 }
 <h1>Sandwich List</h1>
 
-<a asp-page="/Create" class="btn btn-success mb-3">Create Sandwich</a>
+@if (User.Identity?.IsAuthenticated ?? false)
+{
+    <a asp-page="/Create" class="btn btn-success mb-3">Create Sandwich</a>
+}
+else
+{
+    <!-- Redirects to Identity login page when user is not authenticated.
+         If your login page is at a different path, update asp-area/asp-page accordingly. -->
+    <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-success mb-3">Create Sandwich</a>
+}
 
 <table class="table mt-5">
     <thead>
@@ -23,10 +32,18 @@
                 <td>@($"{sandwich.Price:C}")</td>
 
                 <td>
-                    <form method="post" asp-page-handler="Delete" asp-route-id="@sandwich.Id">
-                        <button class="btn btn-danger">Delete</button>
-                    </form>
-                    <a asp-page="Edit" asp-route-id="@sandwich.Id" class="btn btn-warning btn-sm">Edit</a>
+                    @if (User.Identity?.IsAuthenticated ?? false)
+                    {
+                        <form method="post" asp-page-handler="Delete" asp-route-id="@sandwich.Id" class="d-inline">
+                            <button class="btn btn-danger">Delete</button>
+                        </form>
+                        <a asp-page="Edit" asp-route-id="@sandwich.Id" class="btn btn-warning btn-sm">Edit</a>
+                    }
+                    else
+                    {
+                        <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-danger">Delete</a>
+                        <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-warning btn-sm">Edit</a>
+                    }
                 </td>
             </tr>
         }

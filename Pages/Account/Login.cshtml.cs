@@ -15,10 +15,10 @@ namespace WebAppRazorClient.Pages.Account
 
         public LoginModel(IAccountService accountService)
         {
-            _accountService = accountService;
+            _accountService = accountService; 
         }
 
-        [BindProperty]
+        [BindProperty] // Bind form values to this property
         public InputModel Input { get; set; } = new();
 
         public string? ErrorMessage { get; set; }
@@ -40,12 +40,13 @@ namespace WebAppRazorClient.Pages.Account
         {
         }
 
+        // Handle form submission
         public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
         {
-            if (!ModelState.IsValid) return Page();
+            if (!ModelState.IsValid) return Page(); 
 
             var req = new LoginRequest { Email = Input.Email, Password = Input.Password };
-
+            
             var result = await _accountService.LoginAsync(req);
             if (!result.Success)
             {
@@ -59,25 +60,12 @@ namespace WebAppRazorClient.Pages.Account
                 return Page();
             }
 
-            // Build claims - include token + refresh info
+            //Create list of claims
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, result.Username ?? Input.Email),
                 new Claim("access_token", result.Token)
             };
-
-            if (!string.IsNullOrEmpty(result.RefreshToken))
-            {
-                claims.Add(new Claim("refresh_token", result.RefreshToken));
-            }
-            if (!string.IsNullOrEmpty(result.TokenType))
-            {
-                claims.Add(new Claim("token_type", result.TokenType));
-            }
-            if (result.ExpiresIn.HasValue)
-            {
-                claims.Add(new Claim("expires_in", result.ExpiresIn.Value.ToString()));
-            }
 
             if (result.Roles is not null)
             {
@@ -87,18 +75,20 @@ namespace WebAppRazorClient.Pages.Account
                 }
             }
 
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            // Create claims identity and principal represents logged-in user
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme); 
             var principal = new ClaimsPrincipal(identity);
 
+            //This makes the authentication cookie so the user stays logged in
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal,
                 new AuthenticationProperties { IsPersistent = Input.RememberMe });
 
             if (string.IsNullOrEmpty(returnUrl) || !Url.IsLocalUrl(returnUrl))
             {
-                return LocalRedirect("/Account/Profile");
+                return LocalRedirect("/");
             }
 
-            return LocalRedirect(returnUrl);
+            return LocalRedirect(returnUrl); // Redirect to return URL if valid
         }
     }
 }

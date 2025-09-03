@@ -17,17 +17,6 @@ namespace WebAppRazorClient.Pages.Account
         {
             Username = User.Identity?.Name ?? "Unknown";
 
-            // common claim names
-            Email = User.FindFirst(ClaimTypes.Email)?.Value
-                    ?? User.FindFirst("email")?.Value;
-
-            Roles = User.Claims
-                        .Where(c => c.Type == ClaimTypes.Role || c.Type == "role")
-                        .Select(c => c.Value)
-                        .Distinct()
-                        .ToArray();
-
-            Token = User.FindFirst("access_token")?.Value;
         }
     }
 }

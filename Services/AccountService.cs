@@ -12,132 +12,118 @@ namespace WebAppRazorClient.Services
     {
         private readonly IHttpClientFactory _httpClientFactory;
 
-        public AccountService(IHttpClientFactory httpClientFactory)
+        public AccountService(IHttpClientFactory httpClientFactory) 
         {
-            _httpClientFactory = httpClientFactory;
+            _httpClientFactory = httpClientFactory; 
         }
 
         public async Task<RegisterResult> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
         {
-            var client = _httpClientFactory.CreateClient("ApiClient");
+            var client = _httpClientFactory.CreateClient("ApiClient"); // Create an HttpClient instance //HttpClientFactory is preferred for better resource management
 
-            using var resp = await client.PostAsJsonAsync("register", request, cancellationToken);
+            using var resp = await client.PostAsJsonAsync("register", request, cancellationToken); // Send a POST request with the registration data as JSON
 
-            if (!resp.IsSuccessStatusCode)
+            if (!resp.IsSuccessStatusCode) // If the response indicates failure
             {
                 string? content = null;
-                try { content = await resp.Content.ReadAsStringAsync(cancellationToken); } catch { }
+                try { content = await resp.Content.ReadAsStringAsync(cancellationToken); } catch { } // Read error response content if possible
 
                 string? msg = null;
-                try
+                try // Try to parse a structured error message from the response
                 {
                     var obj = await resp.Content.ReadFromJsonAsync<ServerErrorResponse?>(cancellationToken: cancellationToken);
                     msg = obj?.Message;
                 }
                 catch { }
 
-                var details = msg ?? content ?? $"Registration failed ({(int)resp.StatusCode}).";
-                return new RegisterResult(false, details);
+                var details = msg ?? content ?? $"Registration failed ({(int)resp.StatusCode})."; // Fallback error message
+                return new RegisterResult(false, details); // Return failure result with details
             }
 
-            try
+            try // Try to parse the success response body
             {
                 var body = await resp.Content.ReadFromJsonAsync<ApiRegisterResponse?>(cancellationToken: cancellationToken);
                 if (body is not null) return new RegisterResult(body.Success, body.Message);
             }
             catch { }
 
-            return new RegisterResult(true, null);
+            return new RegisterResult(true, null); // Assume success if no body or parse error
         }
 
         public async Task<LoginResult> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
         {
-            var client = _httpClientFactory.CreateClient("ApiClient");
+            var client = _httpClientFactory.CreateClient("ApiClient"); // Create an HttpClient instance
 
-            using var resp = await client.PostAsJsonAsync("login", request, cancellationToken);
+            using var resp = await client.PostAsJsonAsync("login", request, cancellationToken); // Send a POST request with the login data as JSON
+            
+            var content = await resp.Content.ReadAsStringAsync(cancellationToken); // Read response content as string
 
-            var content = await resp.Content.ReadAsStringAsync(cancellationToken);
-
-            if (!resp.IsSuccessStatusCode)
+            if (!resp.IsSuccessStatusCode) // If the response indicates failure
             {
                 var details = string.IsNullOrWhiteSpace(content) ? $"Login failed ({(int)resp.StatusCode})." : content;
                 return new LoginResult(false, null, null, null, details, null, null, null);
             }
 
-            // Parse body and extract token + refresh info (handles camelCase accessToken shape)
+            if (string.IsNullOrWhiteSpace(content))
+                return new LoginResult(false, null, null, null, "Login succeeded but response did not contain a token.", null, null, null);
+
+            // 1) Try direct deserialization to LoginResult (most APIs will match this)
             try
             {
-                if (!string.IsNullOrWhiteSpace(content))
+                var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var direct = JsonSerializer.Deserialize<LoginResult?>(content, opts);
+                if (direct is not null && !string.IsNullOrEmpty(direct.Token))
+                    return direct;
+            }
+            catch
+            {
+                // ignore and try lightweight parsing
+            }
+
+            // 2) Minimal flexible parsing for common token property names (fallback)
+            try
+            {
+                using var doc = JsonDocument.Parse(content);
+                var root = doc.RootElement;
+
+                static string? GetString(JsonElement e, string name)
+                    => e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out var p) && p.ValueKind == JsonValueKind.String ? p.GetString() : null;
+
+                static int? GetInt(JsonElement e, string name)
                 {
-                    using var doc = JsonDocument.Parse(content);
-                    var root = doc.RootElement;
-                    string? token = null;
-                    string? username = null;
+                    if (e.ValueKind != JsonValueKind.Object || !e.TryGetProperty(name, out var p)) return null;
+                    if (p.ValueKind == JsonValueKind.Number && p.TryGetInt32(out var v)) return v;
+                    if (p.ValueKind == JsonValueKind.String && int.TryParse(p.GetString(), out var vs)) return vs;
+                    return null;
+                }
+
+                // look for token in root (covers most APIs)
+                string? token = GetString(root, "token")
+                                ?? GetString(root, "access_token")
+                                ?? GetString(root, "accessToken")
+                                ?? GetString(root, "jwt")
+                                ?? GetString(root, "id_token");
+
+                if (!string.IsNullOrEmpty(token))
+                {
+                    var refresh = GetString(root, "refreshToken") ?? GetString(root, "refresh_token");
+                    var tokenType = GetString(root, "tokenType") ?? GetString(root, "token_type");
+                    var expiresIn = GetInt(root, "expiresIn") ?? GetInt(root, "expires_in");
+                    var username = GetString(root, "username") ?? GetString(root, "userName") ?? GetString(root, "email");
+
                     string[]? roles = null;
-                    string? refreshToken = null;
-                    int? expiresIn = null;
-                    string? tokenType = null;
+                    if (root.TryGetProperty("roles", out var rp) && rp.ValueKind == JsonValueKind.Array)
+                        roles = rp.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!).ToArray();
 
-                    // helper
-                    static string? GetString(JsonElement e, string name)
+                    // also support nested "user" object with username/roles
+                    if (root.TryGetProperty("user", out var u) && u.ValueKind == JsonValueKind.Object)
                     {
-                        return e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out var p) && p.ValueKind == JsonValueKind.String
-                            ? p.GetString() : null;
+                        username ??= GetString(u, "username") ?? GetString(u, "userName") ?? GetString(u, "email");
+                        if (roles == null && u.TryGetProperty("roles", out var ur) && ur.ValueKind == JsonValueKind.Array)
+                            roles = ur.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!).ToArray();
                     }
 
-                    static int? GetInt(JsonElement e, string name)
-                    {
-                        if (e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out var p))
-                        {
-                            if (p.ValueKind == JsonValueKind.Number && p.TryGetInt32(out var v)) return v;
-                            if (p.ValueKind == JsonValueKind.String && int.TryParse(p.GetString(), out var vs)) return vs;
-                        }
-                        return null;
-                    }
-
-                    // candidates: root and common nested objects
-                    var candidates = new System.Collections.Generic.List<JsonElement>();
-                    if (root.ValueKind == JsonValueKind.Object) candidates.Add(root);
-                    if (root.ValueKind == JsonValueKind.Object)
-                    {
-                        if (root.TryGetProperty("data", out var d) && d.ValueKind == JsonValueKind.Object) candidates.Add(d);
-                        if (root.TryGetProperty("result", out var r) && r.ValueKind == JsonValueKind.Object) candidates.Add(r);
-                        if (root.TryGetProperty("value", out var v) && v.ValueKind == JsonValueKind.Object) candidates.Add(v);
-                    }
-
-                    foreach (var c in candidates)
-                    {
-                        token ??= GetString(c, "token")
-                                  ?? GetString(c, "access_token")
-                                  ?? GetString(c, "accessToken")
-                                  ?? GetString(c, "jwt")
-                                  ?? GetString(c, "id_token");
-
-                        refreshToken ??= GetString(c, "refreshToken") ?? GetString(c, "refresh_token");
-                        tokenType ??= GetString(c, "tokenType") ?? GetString(c, "token_type");
-                        expiresIn ??= GetInt(c, "expiresIn") ?? GetInt(c, "expires_in");
-
-                        username ??= GetString(c, "username") ?? GetString(c, "userName") ?? GetString(c, "name") ?? GetString(c, "email");
-
-                        if (roles == null && c.TryGetProperty("roles", out var rp) && rp.ValueKind == JsonValueKind.Array)
-                        {
-                            roles = rp.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!).ToArray();
-                        }
-
-                        if (c.TryGetProperty("user", out var u) && u.ValueKind == JsonValueKind.Object)
-                        {
-                            username ??= GetString(u, "username") ?? GetString(u, "userName") ?? GetString(u, "email");
-                            if (roles == null && u.TryGetProperty("roles", out var ur) && ur.ValueKind == JsonValueKind.Array)
-                                roles = ur.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!).ToArray();
-                        }
-
-                        if (!string.IsNullOrEmpty(token)) break;
-                    }
-
-                    if (!string.IsNullOrEmpty(token))
-                    {
-                        return new LoginResult(true, token, username, roles, null, refreshToken, expiresIn, tokenType);
-                    }
+                    return new LoginResult(true, token, username, roles, null, refresh, expiresIn, tokenType);
                 }
             }
             catch
@@ -146,19 +132,19 @@ namespace WebAppRazorClient.Services
             }
 
             var message = string.IsNullOrWhiteSpace(content) ? "Login succeeded but response did not contain a token." : content;
-            return new LoginResult(false, null, null, null, message, null, null, null);
+            return new LoginResult(false, null, null, null, message, null, null, null); // Response did not contain a token
         }
 
-        // Helper shapes (adjust to match your API JSON)
-        private sealed class ApiRegisterResponse
+        // Helper classes for deserialization of API responses
+        private sealed class ApiRegisterResponse 
         {
-            public bool Success { get; set; }
-            public string? Message { get; set; }
+            public bool Success { get; set; } 
+            public string? Message { get; set; } 
         }
 
         private sealed class ServerErrorResponse
         {
-            public string? Message { get; set; }
+            public string? Message { get; set; } 
         }
     }
 }
